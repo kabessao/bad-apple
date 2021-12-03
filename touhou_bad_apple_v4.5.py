@@ -11,7 +11,9 @@ import moviepy.editor as mp
 
 
 ASCII_CHARS = ["@", "#", "S", "%", "?", "*", "+", ";", ":", ",", " "]
-frame_size = 150
+
+frame_size = int(os.get_terminal_size().lines * 1.33)
+
 frame_interval = 1.0 / 30.75
 
 ASCII_LIST = []
@@ -27,18 +29,28 @@ def play_audio(path):
 
 def play_video(total_frames):
     # os.system('color F0')
-    os.system('mode 150, 500')
+    # os.system('mode 150, 500')
 
     timer = fpstimer.FPSTimer(30)
 
     start_frame = 0
 
-    for frame_number in range(start_frame, total_frames):
-        sys.stdout.write("\r" + ASCII_LIST[frame_number])
+    clearscreen()
+
+    for frame in ASCII_LIST:
+        text = frame
+        lines = len(text.splitlines())
+        output(1, 1,"\r" + text)
         timer.sleep()
 
     # os.system('color 07')
 
+def output(y, x, text):
+    print("\033[%d;%dH" % (y, x) + text)
+
+def clearscreen():
+    os.system('clear' if os.name == 'posix' else 'cls' )
+    ...
 
 # Extract frames from video
 def extract_transform_generate(video_path, start_frame, number_of_frames=1000):
@@ -49,17 +61,16 @@ def extract_transform_generate(video_path, start_frame, number_of_frames=1000):
     ret, image_frame = capture.read()
     while ret and frame_count <= number_of_frames:
         ret, image_frame = capture.read()
-        try:
-            image = Image.fromarray(image_frame)
-            ascii_characters = pixels_to_ascii(greyscale(resize_image(image)))  # get ascii characters
-            pixel_count = len(ascii_characters)
-            ascii_image = "\n".join(
-                [ascii_characters[index:(index + frame_size)] for index in range(0, pixel_count, frame_size)])
-
-            ASCII_LIST.append(ascii_image)
-
-        except Exception as error:
+        if image_frame is None:
             continue
+        image = Image.fromarray(image_frame)
+        ascii_characters = pixels_to_ascii(greyscale(resize_image(image)))  # get ascii characters
+        pixel_count = len(ascii_characters)
+        ascii_image = "".join(
+            ["\n" + ascii_characters[index:(index + frame_size)] for index in range(0, pixel_count, frame_size)])
+
+        ASCII_LIST.append(ascii_image)
+
 
         progress_bar(frame_count, number_of_frames)
 
@@ -80,9 +91,13 @@ def progress_bar(current, total, barLength=25):
 
 # Resize image
 def resize_image(image_frame):
-    width, height = image_frame.size
-    aspect_ratio = (height / float(width * 2.5))  # 2.5 modifier to offset vertical scaling on console
-    new_height = int(aspect_ratio * frame_size)
+    global frame_size
+    term = os.get_terminal_size()
+
+    new_height = term.lines -2 
+
+    frame_size = term.columns -2 
+
     resized_image = image_frame.resize((frame_size, new_height))
     # print('Aspect ratio: %f' % aspect_ratio)
     # print('New dimensions %d %d' % resized_image.size)
@@ -109,7 +124,7 @@ def ascii_generator(image_path, start_frame, number_of_frames):
         image = Image.open(path_to_image)
         ascii_characters = pixels_to_ascii(greyscale(resize_image(image)))  # get ascii characters
         pixel_count = len(ascii_characters)
-        ascii_image = "\n".join(
+        ascii_image = "".join(
             [ascii_characters[index:(index + frame_size)] for index in range(0, pixel_count, frame_size)])
         file_name = r"TextFiles/" + "bad_apple" + str(current_frame) + ".txt"
         try:
@@ -154,27 +169,11 @@ def preflight_operations(path):
 
 
 def main():
-    while True:
-        sys.stdout.write('==============================================================\n')
-        sys.stdout.write('Select option: \n')
-        sys.stdout.write('1) Play\n')
-        sys.stdout.write('2) Exit\n')
-        sys.stdout.write('==============================================================\n')
-
-        user_input = str(input("Your option: "))
-        user_input.strip()  # removes trailing whitespaces
-
-        if user_input == '1':
-            user_input = str(input("Please enter the video file name (file must be in root!): "))
-            total_frames = preflight_operations(user_input)
-            play_audio('audio.mp3')
-            play_video(total_frames=total_frames)
-        elif user_input == '2':
-            exit()
-            continue
-        else:
-            sys.stdout.write('Unknown input!\n')
-            continue
+    clearscreen()
+    user_input = 'BadApple.mp4'
+    total_frames = preflight_operations(user_input)
+    play_audio('audio.mp3')
+    play_video(total_frames=total_frames)
 
 
 if __name__ == '__main__':
