@@ -1,3 +1,10 @@
+# Forked version
+just modified some stuff:
+* Removed the start menu, since there was no use for it;
+* Removed the prompt to insert the video name, it is now hardcoded in the project;
+* Implemented use of ANSI Characters to manipulate cursor position when drawing each frame;
+* Changed the way ASCII frames are generated and drawed, so that it uses the whole viewport of the terminal/command prompt (the ASCII video is compiled using the viewport size, so don't change the window size while the video is playing);
+
 # bad-apple
  Bad Apple printed out on the console with Python!
 
